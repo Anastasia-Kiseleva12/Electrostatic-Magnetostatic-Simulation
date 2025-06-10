@@ -1,0 +1,87 @@
+# .NET Core / Avalonia / Visual Studio / JetBrains Rider
+
+# Build results
+bin/
+obj/
+out/
+Generated_Code/
+
+# Rider
+.idea/
+*.sln.iml
+
+# VS Code
+.vscode/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Auto-generated files
+*.Generated.cs
+*.g.cs
+*.g.i.cs
+*.i.cs
+*.Designer.cs
+
+# Avalonia XAML cache
+.g/
+
+# Avalonia runtime-generated files
+*.axaml.cs
+
+# Backup & temporary files
+*.bak
+*.tmp
+*.swp
+*~
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Publish output
+publish/
+dist/
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Test results
+TestResults/
+*.TestResults.xml
+
+# dotCover
+.idea/.dotCover
+
+# Resharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+
+# Rider local run configs
+.idea/.idea.*
+
+# Dump files
+*.dmp
+*.core
+
+# Snapshots
+*.vspscc
+*.vssscc
+
+# Avalonia static resources cache
+obj/Debug/net*/generated/
+obj/Release/net*/generated/
+# Visual Studio workspace settings
+.vs/

@@ -1,0 +1,53 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ElectroMagSimulator.ViewModels"
+		xmlns:views="using:ElectroMagSimulator.Views"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="ElectroMagSimulator.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="ElectroMagSimulator">
+
+	<Design.DataContext>
+		<vm:MainWindowViewModel/>
+	</Design.DataContext>
+
+	<Grid ColumnDefinitions="300,*">
+		<!-- Левая панель: параметры -->
+		<StackPanel Margin="10" Spacing="10">
+			<TextBlock Text="Тип задачи:" FontWeight="Bold"/>
+			<ComboBox SelectedItem="{Binding SelectedMode}">
+				<ComboBoxItem Content="Электростатика"/>
+				<ComboBoxItem Content="Магнитостатика"/>
+			</ComboBox>
+
+			<TextBlock Text="Ширина области:"/>
+			<TextBox Text="{Binding AreaWidth}" />
+
+			<TextBlock Text="Высота области:"/>
+			<TextBox Text="{Binding AreaHeight}" />
+
+			<TextBlock Text="Источник (ρ или J):"/>
+			<TextBox Text="{Binding SourceValue}" />
+
+			<TextBlock Text="Проницаемость (ε или μ):"/>
+			<TextBox Text="{Binding MaterialProperty}" />
+
+			<Button Content="Построить сетку" Command="{Binding BuildGridCommand}" />
+			<Button Content="Решить задачу" Command="{Binding SolveCommand}" />
+			<Button Content="Очистить" Command="{Binding ClearCommand}" />
+		</StackPanel>
+
+		<Grid Grid.Column="1" Margin="10">
+			<views:DrawingCanvas />
+			<TextBlock x:Name="CoordLabel"
+					   HorizontalAlignment="Left"
+					   VerticalAlignment="Bottom"
+					   Margin="10"
+					   Foreground="Gray"
+					   FontSize="12"/>
+		</Grid>
+	</Grid>
+</Window>
