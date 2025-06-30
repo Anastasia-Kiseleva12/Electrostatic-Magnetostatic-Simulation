@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36109.1 d17.14
+VisualStudioVersion = 17.14.36109.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElectroMagSimulator", "ElectroMagSimulator.csproj", "{42769551-F029-4273-B199-154132DB3949}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElectroMagSimulator.Tests", "..\ElectroMagSimulator.Tests\ElectroMagSimulator.Tests.csproj", "{62FB6614-71D6-42FF-9A9E-D8D17A013265}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{42769551-F029-4273-B199-154132DB3949}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{42769551-F029-4273-B199-154132DB3949}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{42769551-F029-4273-B199-154132DB3949}.Release|Any CPU.Build.0 = Release|Any CPU
+		{62FB6614-71D6-42FF-9A9E-D8D17A013265}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62FB6614-71D6-42FF-9A9E-D8D17A013265}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62FB6614-71D6-42FF-9A9E-D8D17A013265}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62FB6614-71D6-42FF-9A9E-D8D17A013265}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

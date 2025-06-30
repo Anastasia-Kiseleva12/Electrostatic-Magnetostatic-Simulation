@@ -1,53 +1,133 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:ElectroMagSimulator.ViewModels"
-		xmlns:views="using:ElectroMagSimulator.Views"
+        xmlns:views="using:ElectroMagSimulator.Views"
+        xmlns:conv="clr-namespace:ElectroMagSimulator.Converters"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
         x:Class="ElectroMagSimulator.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="ElectroMagSimulator">
+        Title="ElectroMagSimulator"
+        Background="WhiteSmoke">
 
 	<Design.DataContext>
-		<vm:MainWindowViewModel/>
+		<vm:MainWindowViewModel />
 	</Design.DataContext>
 
-	<Grid ColumnDefinitions="300,*">
-		<!-- Левая панель: параметры -->
-		<StackPanel Margin="10" Spacing="10">
-			<TextBlock Text="Тип задачи:" FontWeight="Bold"/>
-			<ComboBox SelectedItem="{Binding SelectedMode}">
-				<ComboBoxItem Content="Электростатика"/>
-				<ComboBoxItem Content="Магнитостатика"/>
-			</ComboBox>
+	<Window.Resources>
+		<conv:InverseBooleanConverter x:Key="InverseBooleanConverter" />
+	</Window.Resources>
 
-			<TextBlock Text="Ширина области:"/>
-			<TextBox Text="{Binding AreaWidth}" />
+	<DockPanel>
 
-			<TextBlock Text="Высота области:"/>
-			<TextBox Text="{Binding AreaHeight}" />
+		<!-- Верхняя панель -->
+		<Border DockPanel.Dock="Top" Background="#E0F2F1" Height="40">
+			<StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0" Spacing="20">
+				<TextBlock Text="ElectroMagSimulator" FontWeight="Bold" FontSize="16" VerticalAlignment="Center" />
+				<Button Content="Файл" Background="Transparent" BorderBrush="Transparent" />
+				<Button Content="Сохранить" Background="Transparent" BorderBrush="Transparent" />
+				<Button Content="Помощь" Background="Transparent" BorderBrush="Transparent" />
+			</StackPanel>
+		</Border>
 
-			<TextBlock Text="Источник (ρ или J):"/>
-			<TextBox Text="{Binding SourceValue}" />
+		<!-- Основное содержимое -->
+		<Grid ColumnDefinitions="300,*">
 
-			<TextBlock Text="Проницаемость (ε или μ):"/>
-			<TextBox Text="{Binding MaterialProperty}" />
+			<!-- Левая панель -->
+			<Border Background="White" BorderBrush="LightGray" BorderThickness="0,0,1,0">
+				<ScrollViewer>
+					<StackPanel Margin="10" Spacing="12">
 
-			<Button Content="Построить сетку" Command="{Binding BuildGridCommand}" />
-			<Button Content="Решить задачу" Command="{Binding SolveCommand}" />
-			<Button Content="Очистить" Command="{Binding ClearCommand}" />
-		</StackPanel>
+						<TextBlock Text="Параметры задачи" FontWeight="Bold" FontSize="14" Margin="0,0,0,5" />
 
-		<Grid Grid.Column="1" Margin="10">
-			<views:DrawingCanvas />
-			<TextBlock x:Name="CoordLabel"
-					   HorizontalAlignment="Left"
-					   VerticalAlignment="Bottom"
-					   Margin="10"
-					   Foreground="Gray"
-					   FontSize="12"/>
+						<TextBlock Text="Тип задачи:" />
+						<ComboBox SelectedItem="{Binding SelectedMode}">
+							<ComboBoxItem Content="Электростатика" />
+							<ComboBoxItem Content="Магнитостатика" />
+						</ComboBox>
+
+						<TextBlock Text="Размер области" FontWeight="Bold" FontSize="13" Margin="0,10,0,0" />
+						<TextBlock Text="Ширина:" />
+						<TextBox Text="{Binding AreaWidth}" />
+						<TextBlock Text="Высота:" />
+						<TextBox Text="{Binding AreaHeight}" />
+
+						<TextBlock Text="Сетка" FontWeight="Bold" FontSize="13" Margin="0,10,0,0" />
+						<ComboBox ItemsSource="{Binding GridTypes}" SelectedItem="{Binding SelectedGridType}" />
+
+						<StackPanel IsVisible="{Binding IsUniformGrid}">
+							<TextBlock Text="Шаг по X:" />
+							<TextBox Text="{Binding StepX}" />
+							<TextBlock Text="Шаг по Y:" />
+							<TextBox Text="{Binding StepY}" />
+						</StackPanel>
+
+						<StackPanel IsVisible="{Binding IsUniformGrid, Converter={StaticResource InverseBooleanConverter}}">
+							<TextBlock Text="Шаги по X (через запятую):" />
+							<TextBox Text="{Binding CustomStepsX}" />
+							<TextBlock Text="Шаги по Y (через запятую):" />
+							<TextBox Text="{Binding CustomStepsY}" />
+						</StackPanel>
+
+						<TextBlock Text="Физические свойства" FontWeight="Bold" FontSize="13" Margin="0,10,0,0" />
+						<TextBlock Text="Источник (ρ или J):" />
+						<TextBox Text="{Binding SourceValue}" />
+						<TextBlock Text="Проницаемость (ε или μ):" />
+						<TextBox Text="{Binding MaterialProperty}" />
+
+						<TextBlock Text="Действия" FontWeight="Bold" FontSize="13" Margin="0,10,0,0" />
+						<Button Content="⚙ Построить сетку" Command="{Binding BuildGridCommand}" Margin="0,5,0,0" />
+						<Button Content="➡ Решить задачу" Command="{Binding SolveCommand}" Margin="0,5,0,0" />
+						<Button Content="🗑 Очистить" Command="{Binding ClearCommand}" Margin="0,5,0,0" />
+
+					</StackPanel>
+				</ScrollViewer>
+			</Border>
+
+			<!-- Область визуализации -->
+			<Grid Grid.Column="1" Margin="10">
+
+				<views:DrawingCanvas x:Name="DrawingCanvas" />
+
+				<Border Background="#E0F2F1" CornerRadius="5" Padding="5"
+        HorizontalAlignment="Right" VerticalAlignment="Top" Margin="10"
+        BorderBrush="Gray" BorderThickness="1" Opacity="0.95">
+					<StackPanel Orientation="Horizontal" Spacing="5">
+
+						<Button Width="40" Height="40">
+							<Image Source="avares://ElectroMagSimulator/Assets/Icons/zoom-in.png"
+								   Width="24" Height="24" Stretch="Uniform"/>
+						</Button>
+
+						<Button Width="40" Height="40">
+							<Image Source="avares://ElectroMagSimulator/Assets/Icons/zoom-out.png"
+								   Width="24" Height="24" Stretch="Uniform"/>
+						</Button>
+
+						<Button Width="40" Height="40">
+							<Image Source="avares://ElectroMagSimulator/Assets/Icons/switch.png"
+								   Width="24" Height="24" Stretch="Uniform"/>
+						</Button>
+
+						<Button Width="40" Height="40">
+							<Image Source="avares://ElectroMagSimulator/Assets/Icons/content.png"
+								   Width="24" Height="24" Stretch="Uniform"/>
+						</Button>
+
+					</StackPanel>
+				</Border>
+
+
+				<TextBlock x:Name="CoordLabel"
+                           HorizontalAlignment="Left"
+                           VerticalAlignment="Bottom"
+                           Margin="10"
+                           Foreground="Gray"
+                           FontSize="12" />
+
+			</Grid>
 		</Grid>
-	</Grid>
+	</DockPanel>
 </Window>
