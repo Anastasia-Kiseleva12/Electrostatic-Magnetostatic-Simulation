@@ -3,39 +3,41 @@ using ElectroMagSimulator.TestUtils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Globalization;
 
 namespace ElectroMagSimulator.Core
 {
-    public  class GridGenerator : IGridGenerator
+    public class GridGenerator : IGridGenerator
     {
         private IMesh? _mesh;
+        private List<IGridArea>? _areas;
+        private double _xStart;
+        private double _yStart;
 
-        public void Generate(double width, double height, double hx, double hy)
+        public void Generate(IReadOnlyList<IGridArea> areas, IGridAxis xAxis, IGridAxis yAxis)
         {
-            if (hx <= 0 || hy <= 0 || width <= 0 || height <= 0)
-                throw new ArgumentException("Параметры сетки некорректны");
+            _areas = areas.ToList();
+            _xStart = xAxis.Start;
+            _yStart = yAxis.Start;
 
-            var xSteps = Enumerable.Repeat(hx, (int)Math.Ceiling(width / hx)).ToList();
-            var ySteps = Enumerable.Repeat(hy, (int)Math.Ceiling(height / hy)).ToList();
+            var xSteps = CalculateSteps(_xStart, xAxis.Points, xAxis.HMin, xAxis.DH, xAxis.SH);
+            var ySteps = CalculateSteps(_yStart, yAxis.Points, yAxis.HMin, yAxis.DH, yAxis.SH);
 
             Generate(xSteps, ySteps);
         }
+
         public void Generate(IReadOnlyList<double> xSteps, IReadOnlyList<double> ySteps)
         {
-            if (xSteps.Any(s => s <= 0) || ySteps.Any(s => s <= 0))
-                throw new ArgumentException("Шаги сетки должны быть положительными");
+            if (_areas == null)
+                throw new InvalidOperationException("Список областей не задан. Сначала вызовите перегруженный Generate с областями.");
 
-            var xCoords = xSteps.Aggregate(new List<double> { 0.0 }, (acc, s) =>
-            {
-                acc.Add(acc.Last() + s);
-                return acc;
-            });
+            var xCoords = new List<double> { _xStart };
+            foreach (var s in xSteps)
+                xCoords.Add(xCoords.Last() + s);
 
-            var yCoords = ySteps.Aggregate(new List<double> { 0.0 }, (acc, s) =>
-            {
-                acc.Add(acc.Last() + s);
-                return acc;
-            });
+            var yCoords = new List<double> { _yStart };
+            foreach (var s in ySteps)
+                yCoords.Add(yCoords.Last() + s);
 
             var nodes = new List<Node>();
             int nodeId = 0;
@@ -68,12 +70,58 @@ namespace ElectroMagSimulator.Core
                     elements.Add(new Element
                     {
                         Id = elemId++,
-                        NodeIds = new[] { n0, n1, n2, n3 }
+                        NodeIds = new[] { n0, n1, n2, n3 },
+                        AreaId = -1
                     });
                 }
             }
 
-            _mesh = new SimpleMesh(nodes, elements);
+            var materials = new List<Material>();
+            _mesh = new SimpleMesh(nodes, elements, materials, _areas);
+        }
+
+        private List<double> CalculateSteps(double start, IReadOnlyList<double> innerPoints,
+                                  IReadOnlyList<double> hmin, IReadOnlyList<double> dh,
+                                  IReadOnlyList<int> sh)
+        {
+            var fullPoints = new List<double> { start };
+            fullPoints.AddRange(innerPoints);
+            var steps = new List<double>();
+
+            for (int i = 0; i < fullPoints.Count - 1; i++)
+            {
+                double L = fullPoints[i + 1] - fullPoints[i];
+                double h = hmin[i];
+                double d = dh[i];
+                int sgn = sh[i];
+
+                int N = EstimateStepsCount(L, h, d);
+                double sum = 0;
+                double lastStep = 0;
+
+                for (int n = 0; n < N; n++)
+                {
+                    double factor = Math.Pow(d, sgn == 1 ? n : (N - 1 - n));
+                    lastStep = h * factor;
+                    steps.Add(lastStep);
+                    sum += lastStep;
+                }
+
+                // Корректировка последнего шага для точного попадания на границу
+                if (Math.Abs(sum - L) > 1e-8)
+                {
+                    steps[steps.Count - 1] += L - sum;
+                }
+            }
+
+            return steps;
+        }
+        private int EstimateStepsCount(double length, double h, double d)
+        {
+            if (Math.Abs(d - 1.0) < 1e-8)
+                return Math.Max(1, (int)Math.Round(length / h));
+
+            return Math.Max(1, (int)Math.Ceiling(Math.Log(1 + length * (d - 1) / h, d)));
         }
 
         public IMesh GetMesh()
@@ -83,9 +131,5 @@ namespace ElectroMagSimulator.Core
 
             return _mesh;
         }
-
-        public IEnumerable<Node> GetNodes() => _mesh?.Nodes ?? Enumerable.Empty<Node>();
-
-        public IEnumerable<Element> GetElements() => _mesh?.Elements ?? Enumerable.Empty<Element>();
     }
 }

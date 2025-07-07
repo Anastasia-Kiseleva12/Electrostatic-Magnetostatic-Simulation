@@ -1,9 +1,5 @@
-﻿using ElectroMagSimulator.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using ElectroMagSimulator.Models;
 
 namespace ElectroMagSimulator.Core
 {
@@ -12,14 +8,14 @@ namespace ElectroMagSimulator.Core
         private MatrixAssembler _assembler;
         private SparseMatrix _matrix;
         private double[] _rhs;
-        private double _epsilon;
+        private List<Material> _materials;
         private IRightPart _source;
         private IMesh _mesh;
         private MatrixPortraitBuilder.MatrixPortrait _portrait;
 
-        public ElectrostaticProblem(double epsilon, IRightPart source)
+        public ElectrostaticProblem(List<Material> materials, IRightPart source)
         {
-            _epsilon = epsilon;
+            _materials = materials;
             _source = source;
         }
 
@@ -28,7 +24,7 @@ namespace ElectroMagSimulator.Core
             _mesh = mesh;
             _portrait = new MatrixPortraitBuilder().Build(mesh);
             _assembler = new MatrixAssembler();
-            _assembler.AssembleElectrostatics(mesh, _epsilon, _source, _portrait);
+            _assembler.AssembleElectrostatics(mesh, _portrait, _source);
             _matrix = _assembler.GetMatrix();
             _rhs = _assembler.GetRhs();
         }
@@ -40,7 +36,7 @@ namespace ElectroMagSimulator.Core
 
         public void PostProcess(double[] solution)
         {
-            // Например, передать на визуализацию
+            // Например, визуализация распределения потенциала
         }
     }
 }

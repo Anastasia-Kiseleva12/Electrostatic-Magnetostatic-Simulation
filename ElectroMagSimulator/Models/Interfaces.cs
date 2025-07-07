@@ -1,36 +1,58 @@
-﻿using DynamicData;
-using ElectroMagSimulator.Core;
-using System;
+﻿using ElectroMagSimulator.Core;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace ElectroMagSimulator.Models
 {
+    // Описание области
+    public interface IGridArea
+    {
+        double X0 { get; }
+        double X1 { get; }
+        double Y0 { get; }
+        double Y1 { get; }
+        Material Material { get; }
+    }
+
+    // Описание разбиения по одной оси
+    public interface IGridAxis
+    {
+        double Start { get; }
+        IReadOnlyList<double> Points { get; }      // Границы
+        IReadOnlyList<double> HMin { get; }        // Минимальные шаги
+        IReadOnlyList<double> DH { get; }          // Коэффициенты разрядки
+        IReadOnlyList<int> SH { get; }             // Знаки разрядки
+        int DoubleMode { get; }                    // 0 - нет, 1 - удвоение, 2 - учетверение
+    }
+
+    public interface IGridAxisGenerator
+    {
+        IReadOnlyList<double> GenerateAxis(IEnumerable<IGridArea> areas, bool isXAxis);
+    }
+    // Генератор сетки
     public interface IGridGenerator
     {
-        void Generate(double width, double height, double hx, double hy); // равномерная
-        void Generate(IReadOnlyList<double> xSteps, IReadOnlyList<double> ySteps); // неравномерная
+        void Generate(IReadOnlyList<IGridArea> areas, IGridAxis xAxis, IGridAxis yAxis);
         IMesh GetMesh();
-        IEnumerable<Node> GetNodes();
-        IEnumerable<Element> GetElements();
     }
+
     public interface IMesh
     {
         IEnumerable<Node> Nodes { get; }
         IEnumerable<Element> Elements { get; }
+        IReadOnlyList<IGridArea> Areas { get; }
 
         int NodeCount { get; }
         int ElementCount { get; }
 
         Node GetNode(int index);
         Element GetElement(int index);
+        Material GetMaterialForElement(Element element);
     }
+
+    // Сборка глобальной матрицы
     public interface IMatrixAssembler
     {
-        void Assemble(IMesh mesh, Material material, IRightPart source);
+        void Assemble(IMesh mesh, IRightPart source);
         double[,] GetMatrix();
         double[] GetRhs();
     }
@@ -44,6 +66,8 @@ namespace ElectroMagSimulator.Models
     {
         void Visualize(double[] solution);
     }
+
+    // Базовые классы
     public class Node
     {
         public int Id { get; set; }
@@ -55,18 +79,19 @@ namespace ElectroMagSimulator.Models
     {
         public int Id { get; set; }
         public int[] NodeIds { get; set; }
-        public int AreaId { get; set; }
+        public int AreaId { get; set; }  // Индекс области, к которой принадлежит элемент
     }
 
     public class Material
     {
         public double Mu { get; set; }
+        public double TokJ { get; set; }
         public int AreaId { get; set; }
+        public string Color { get; set; }
     }
 
     public interface IRightPart
     {
         double GetValueAt(Node node);
     }
-
 }

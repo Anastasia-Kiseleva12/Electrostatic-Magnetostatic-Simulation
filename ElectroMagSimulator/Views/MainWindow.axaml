@@ -43,40 +43,27 @@
 						<TextBlock Text="Параметры задачи" FontWeight="Bold" FontSize="14" Margin="0,0,0,5" />
 
 						<TextBlock Text="Тип задачи:" />
-						<ComboBox SelectedItem="{Binding SelectedMode}">
-							<ComboBoxItem Content="Электростатика" />
-							<ComboBoxItem Content="Магнитостатика" />
+						<ComboBox ItemsSource="{Binding SimulationModes}"
+									SelectedItem="{Binding SelectedMode}"
+															Width="200">
 						</ComboBox>
 
-						<TextBlock Text="Размер области" FontWeight="Bold" FontSize="13" Margin="0,10,0,0" />
-						<TextBlock Text="Ширина:" />
-						<TextBox Text="{Binding AreaWidth}" />
-						<TextBlock Text="Высота:" />
-						<TextBox Text="{Binding AreaHeight}" />
 
 						<TextBlock Text="Сетка" FontWeight="Bold" FontSize="13" Margin="0,10,0,0" />
-						<ComboBox ItemsSource="{Binding GridTypes}" SelectedItem="{Binding SelectedGridType}" />
-
-						<StackPanel IsVisible="{Binding IsUniformGrid}">
-							<TextBlock Text="Шаг по X:" />
-							<TextBox Text="{Binding StepX}" />
-							<TextBlock Text="Шаг по Y:" />
-							<TextBox Text="{Binding StepY}" />
-						</StackPanel>
-
-						<StackPanel IsVisible="{Binding IsUniformGrid, Converter={StaticResource InverseBooleanConverter}}">
-							<TextBlock Text="Шаги по X (через запятую):" />
-							<TextBox Text="{Binding CustomStepsX}" />
-							<TextBlock Text="Шаги по Y (через запятую):" />
-							<TextBox Text="{Binding CustomStepsY}" />
-						</StackPanel>
-
-						<TextBlock Text="Физические свойства" FontWeight="Bold" FontSize="13" Margin="0,10,0,0" />
-						<TextBlock Text="Источник (ρ или J):" />
-						<TextBox Text="{Binding SourceValue}" />
-						<TextBlock Text="Проницаемость (ε или μ):" />
-						<TextBox Text="{Binding MaterialProperty}" />
-
+						<Button Content="{Binding GridButtonText}" Command="{Binding CreateGridCommand}" Margin="0,5,0,0" />
+						<TextBlock Text="Материалы:" FontWeight="Bold" FontSize="13" Margin="0,10,0,0" />
+						
+						<ComboBox ItemsSource="{Binding Materials}"
+SelectedItem="{Binding SelectedMaterial}"
+Width="200"
+Margin="0,0,0,10"
+SelectionChanged="OnMaterialSelectionChanged">
+							<ComboBox.ItemTemplate>
+								<DataTemplate>
+									<TextBlock Text="{Binding Name}" />
+								</DataTemplate>
+							</ComboBox.ItemTemplate>
+						</ComboBox>
 						<TextBlock Text="Действия" FontWeight="Bold" FontSize="13" Margin="0,10,0,0" />
 						<Button Content="⚙ Построить сетку" Command="{Binding BuildGridCommand}" Margin="0,5,0,0" />
 						<Button Content="➡ Решить задачу" Command="{Binding SolveCommand}" Margin="0,5,0,0" />
@@ -110,9 +97,16 @@
 							<Image Source="avares://ElectroMagSimulator/Assets/Icons/switch.png"
 								   Width="24" Height="24" Stretch="Uniform"/>
 						</Button>
-
+						<Button Width="40" Height="40" Command="{Binding ActivateMaterialPaintCommand}">
+							<Image Source="avares://ElectroMagSimulator/Assets/Icons/paint.png"
+								   Width="24" Height="24" Stretch="Uniform"/>
+						</Button>
 						<Button Width="40" Height="40">
 							<Image Source="avares://ElectroMagSimulator/Assets/Icons/content.png"
+								   Width="24" Height="24" Stretch="Uniform"/>
+						</Button>
+						<Button Width="40" Height="40" Command="{Binding ToggleBoundariesCommand}">
+							<Image Source="avares://ElectroMagSimulator/Assets/Icons/border.png"
 								   Width="24" Height="24" Stretch="Uniform"/>
 						</Button>
 

@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using ElectroMagSimulator.Models;
+﻿using ElectroMagSimulator.Models;
 using ElectroMagSimulator.Core;
-using ElectroMagSimulator.TestUtils;
-using static ElectroMagSimulator.Models.Interfaces;
 
 class Program
 {
@@ -32,37 +28,6 @@ class Program
             new Element { Id = 0, NodeIds = new[] { 0, 1, 2, 3 } }
         };
 
-        // Создание сетки
-        var mesh = new SimpleMesh(nodes, elements);
-
-        // Портрет матрицы
-        var portraitBuilder = new MatrixPortraitBuilder();
-        var portrait = portraitBuilder.Build(mesh);
-
-        // Материал и источник
-        var material = new Material { Mu = 1.0 };
-        var source = new RightPart2X();
-
-        // Сборка матрицы
-        var assembler = new MatrixAssembler();
-        assembler.Assemble(mesh, material, source, portrait);
-
-        var matrix = assembler.GetMatrix();
-        var rhs = assembler.GetRhs();
-
-        // Вывод разреженной матрицы
-        Console.WriteLine("Диагональные элементы:");
-        for (int i = 0; i < matrix.Di.Length; i++)
-            Console.WriteLine($"di[{i}] = {matrix.Di[i]:F3}");
-
-        Console.WriteLine("\nВнедиагональные элементы (по портрету):");
-        for (int i = 0; i < matrix.Gg.Length; i++)
-            Console.WriteLine($"gg[{i}] = {matrix.Gg[i]:F3}");
-
-        Console.WriteLine("\nВектор правой части:");
-        for (int i = 0; i < rhs.Length; i++)
-            Console.WriteLine($"rhs[{i}] = {rhs[i]:F3}");
-
-        Console.ReadLine();
+       
     }
 }

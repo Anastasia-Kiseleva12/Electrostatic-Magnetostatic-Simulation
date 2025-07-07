@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using ElectroMagSimulator.Models;
 
 namespace ElectroMagSimulator.Core
@@ -10,15 +8,16 @@ namespace ElectroMagSimulator.Core
         private MatrixAssembler _assembler;
         private SparseMatrix _matrix;
         private double[] _rhs;
-        private double _mu;
-        private IRightPart _source;
         private IMesh _mesh;
         private MatrixPortraitBuilder.MatrixPortrait _portrait;
 
-        public MagnetostaticProblem(double mu, IRightPart source)
+        private double[] _solutionA; 
+
+        public double[] MagneticPotential => _solutionA; 
+
+        public MagnetostaticProblem()
         {
-            _mu = mu;
-            _source = source;
+            
         }
 
         public void Assemble(IMesh mesh)
@@ -26,20 +25,20 @@ namespace ElectroMagSimulator.Core
             _mesh = mesh;
             _portrait = new MatrixPortraitBuilder().Build(mesh);
             _assembler = new MatrixAssembler();
-            _assembler.AssembleMagnetostatics(mesh, _mu, _source, _portrait);
+            _assembler.AssembleMagnetostatics(mesh, _portrait);
             _matrix = _assembler.GetMatrix();
             _rhs = _assembler.GetRhs();
         }
 
         public double[] Solve()
         {
-            return new CGSolver().Solve(_matrix, _rhs);
+            _solutionA = new CGSolver().Solve(_matrix, _rhs);
+            return _solutionA;
         }
 
         public void PostProcess(double[] solution)
         {
-            // Например, изолинии или визуализация B
+            // Здесь в будущем можно визуализировать изолинии A или поле индукции B
         }
     }
-
 }
