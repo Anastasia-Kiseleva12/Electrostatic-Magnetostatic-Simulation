@@ -13,7 +13,7 @@ namespace ElectroMagSimulator.Core
         public double X1 { get; set; }
         public double Y0 { get; set; }
         public double Y1 { get; set; }
-        public Material Material { get; set; }
+        public int AreaId { get; set; }
     }
 
 }

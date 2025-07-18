@@ -210,9 +210,9 @@ namespace ElectroMagSimulator.ViewModels
         private void OnConfirm()
         {
             GridSettingsConfirmed?.Invoke(
-                Areas.Select(a => a.ToGridArea()).ToList(),
-                XSettings.ToGridAxis(DoubleToX ? 1 : 0),
-                YSettings.ToGridAxis(DoubleToY ? 1 : 0)
+            Areas.Select((a, index) => a.ToGridArea(index)).ToList(),
+            XSettings.ToGridAxis(DoubleToX ? 1 : 0),
+            YSettings.ToGridAxis(DoubleToY ? 1 : 0)
             );
 
             RequestClose?.Invoke(true);
@@ -243,6 +243,8 @@ namespace ElectroMagSimulator.ViewModels
         private string _y0 = "0";
         private string _y1 = "0";
 
+        public int Index { get; set; } 
+
         public string X0
         {
             get => _x0;
@@ -266,23 +268,21 @@ namespace ElectroMagSimulator.ViewModels
             get => _y1;
             set => this.RaiseAndSetIfChanged(ref _y1, value);
         }
-        public IGridArea ToGridArea()
+
+        public IGridArea ToGridArea(int areaId)
         {
             return new GridArea
             {
+                AreaId = areaId,
                 X0 = double.Parse(X0.Replace(',', '.'), CultureInfo.InvariantCulture),
                 X1 = double.Parse(X1.Replace(',', '.'), CultureInfo.InvariantCulture),
                 Y0 = double.Parse(Y0.Replace(',', '.'), CultureInfo.InvariantCulture),
-                Y1 = double.Parse(Y1.Replace(',', '.'), CultureInfo.InvariantCulture),
-                Material = new Material
-                {
-                    AreaId = 0,
-                    Mu = 1.0,
-                    TokJ = 0.0
-                }
+                Y1 = double.Parse(Y1.Replace(',', '.'), CultureInfo.InvariantCulture)
             };
         }
+
     }
+
     public class GridAxisSettings : ViewModelBase
     {
         private string _x0 = "0";

@@ -67,17 +67,24 @@ namespace ElectroMagSimulator.Core
                     int n2 = n0 + cols;
                     int n3 = n2 + 1;
 
+                    // Центр элемента
+                    double centerX = 0.25 * (xCoords[ix] + xCoords[ix + 1] + xCoords[ix] + xCoords[ix + 1]);
+                    double centerY = 0.25 * (yCoords[iy] + yCoords[iy + 1] + yCoords[iy] + yCoords[iy + 1]);
+
+                    int areaId = GetAreaIdForPoint(centerX, centerY);
+
                     elements.Add(new Element
                     {
                         Id = elemId++,
                         NodeIds = new[] { n0, n1, n2, n3 },
-                        AreaId = -1
+                        AreaId = areaId
                     });
                 }
             }
 
+
             var materials = new List<Material>();
-            _mesh = new SimpleMesh(nodes, elements, materials, _areas);
+            _mesh = new SimpleMesh(nodes, elements, _areas, materials);
         }
 
         private List<double> CalculateSteps(double start, IReadOnlyList<double> innerPoints,
@@ -107,7 +114,6 @@ namespace ElectroMagSimulator.Core
                     sum += lastStep;
                 }
 
-                // Корректировка последнего шага для точного попадания на границу
                 if (Math.Abs(sum - L) > 1e-8)
                 {
                     steps[steps.Count - 1] += L - sum;
@@ -131,5 +137,17 @@ namespace ElectroMagSimulator.Core
 
             return _mesh;
         }
+        private int GetAreaIdForPoint(double x, double y)
+        {
+            for (int i = 0; i < _areas.Count; i++)
+            {
+                var a = _areas[i];
+                if (x >= a.X0 && x <= a.X1 && y >= a.Y0 && y <= a.Y1)
+                    return i;
+            }
+
+            return -1;
+        }
+
     }
 }

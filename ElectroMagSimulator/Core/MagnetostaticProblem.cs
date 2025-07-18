@@ -10,14 +10,15 @@ namespace ElectroMagSimulator.Core
         private double[] _rhs;
         private IMesh _mesh;
         private MatrixPortraitBuilder.MatrixPortrait _portrait;
+        private IReadOnlyList<Material> _materials;
 
-        private double[] _solutionA; 
+        private double[] _solutionA;
 
-        public double[] MagneticPotential => _solutionA; 
+        public double[] MagneticPotential => _solutionA;
 
-        public MagnetostaticProblem()
+        public MagnetostaticProblem(IReadOnlyList<Material> materials)
         {
-            
+            _materials = materials;
         }
 
         public void Assemble(IMesh mesh)
@@ -25,7 +26,7 @@ namespace ElectroMagSimulator.Core
             _mesh = mesh;
             _portrait = new MatrixPortraitBuilder().Build(mesh);
             _assembler = new MatrixAssembler();
-            _assembler.AssembleMagnetostatics(mesh, _portrait);
+            _assembler.AssembleMagnetostatics(mesh, _materials, _portrait);
             _matrix = _assembler.GetMatrix();
             _rhs = _assembler.GetRhs();
         }
@@ -36,9 +37,13 @@ namespace ElectroMagSimulator.Core
             return _solutionA;
         }
 
+        public IPostProcessor PostProcessor { get; private set; }
+
         public void PostProcess(double[] solution)
         {
-            // Здесь в будущем можно визуализировать изолинии A или поле индукции B
+            PostProcessor = new MagnetostaticPostProcessor();
+            PostProcessor.LoadMesh(_mesh, solution);
         }
     }
+
 }

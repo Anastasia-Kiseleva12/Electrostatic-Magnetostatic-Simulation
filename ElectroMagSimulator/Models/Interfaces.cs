@@ -1,4 +1,6 @@
 ﻿using ElectroMagSimulator.Core;
+using ReactiveUI;
+using System;
 using System.Collections.Generic;
 
 namespace ElectroMagSimulator.Models
@@ -6,12 +8,13 @@ namespace ElectroMagSimulator.Models
     // Описание области
     public interface IGridArea
     {
+        int AreaId { get; }
         double X0 { get; }
         double X1 { get; }
         double Y0 { get; }
         double Y1 { get; }
-        Material Material { get; }
     }
+
 
     // Описание разбиения по одной оси
     public interface IGridAxis
@@ -39,14 +42,19 @@ namespace ElectroMagSimulator.Models
     {
         IEnumerable<Node> Nodes { get; }
         IEnumerable<Element> Elements { get; }
-        IReadOnlyList<IGridArea> Areas { get; }
-
         int NodeCount { get; }
         int ElementCount { get; }
 
         Node GetNode(int index);
         Element GetElement(int index);
-        Material GetMaterialForElement(Element element);
+
+        /// Новый контракт:
+        Material? GetMaterialForElement(Element element);
+        List<IGridArea> Areas { get; }
+
+        // Материалы можно запрашивать/обновлять
+        List<Material> GetMaterials();
+        void SetMaterials(List<Material> materials);
     }
 
     // Сборка глобальной матрицы
@@ -64,7 +72,8 @@ namespace ElectroMagSimulator.Models
 
     public interface IPostProcessor
     {
-        void Visualize(double[] solution);
+        void LoadMesh(IMesh mesh, double[] solution);
+        ProbePoint EvaluateAt(double x, double y);
     }
 
     // Базовые классы
@@ -94,4 +103,55 @@ namespace ElectroMagSimulator.Models
     {
         double GetValueAt(Node node);
     }
+    public class ProbePoint : ReactiveObject
+    {
+        private double _x;
+        public double X
+        {
+            get => _x;
+            set => this.RaiseAndSetIfChanged(ref _x, value);
+        }
+
+        private double _y;
+        public double Y
+        {
+            get => _y;
+            set => this.RaiseAndSetIfChanged(ref _y, value);
+        }
+
+        private double _az;
+        public double Az
+        {
+            get => _az;
+            set => this.RaiseAndSetIfChanged(ref _az, value);
+        }
+
+        private double _bx;
+        public double Bx
+        {
+            get => _bx;
+            set => this.RaiseAndSetIfChanged(ref _bx, value);
+        }
+
+        private double _by;
+        public double By
+        {
+            get => _by;
+            set => this.RaiseAndSetIfChanged(ref _by, value);
+        }
+
+        private double _bAbs;
+        public double BAbs
+        {
+            get => _bAbs;
+            set => this.RaiseAndSetIfChanged(ref _bAbs, value);
+        }
+
+        public void Recalculate()
+        {
+            BAbs = Math.Sqrt(Bx * Bx + By * By);
+        }
+    }
+
 }
+

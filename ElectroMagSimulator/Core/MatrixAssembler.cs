@@ -1,6 +1,8 @@
-﻿using System;
+﻿using ElectroMagSimulator.Models;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using ElectroMagSimulator.Models;
 
 namespace ElectroMagSimulator.Core
 {
@@ -9,21 +11,39 @@ namespace ElectroMagSimulator.Core
         private SparseMatrix _matrix;
         private double[] _rhs;
 
-        public void AssembleElectrostatics(IMesh mesh, MatrixPortraitBuilder.MatrixPortrait portrait, IRightPart source)
+        public void AssembleElectrostatics(
+            IMesh mesh,
+            IReadOnlyList<Material> materials,
+            MatrixPortraitBuilder.MatrixPortrait portrait,
+            IRightPart source)
         {
-            AssembleInternal(mesh, portrait, isMagnetostatic: false, source);
+            foreach (var mat in materials)
+                Debug.WriteLine($"Material: AreaId={mat.AreaId}, Mu={mat.Mu}, TokJ={mat.TokJ}");
+
+            AssembleInternal(mesh, materials, portrait, isMagnetostatic: false, source);
         }
 
-        public void AssembleMagnetostatics(IMesh mesh, MatrixPortraitBuilder.MatrixPortrait portrait)
+        public void AssembleMagnetostatics(
+            IMesh mesh,
+            IReadOnlyList<Material> materials,
+            MatrixPortraitBuilder.MatrixPortrait portrait)
         {
-            AssembleInternal(mesh, portrait, isMagnetostatic: true, source: null);
+            foreach (var mat in materials)
+                Debug.WriteLine($"Material: AreaId={mat.AreaId}, Mu={mat.Mu}, TokJ={mat.TokJ}");
+
+            AssembleInternal(mesh, materials, portrait, isMagnetostatic: true, source: null);
         }
 
         public SparseMatrix GetMatrix() => _matrix;
 
         public double[] GetRhs() => _rhs;
 
-        private void AssembleInternal(IMesh mesh, MatrixPortraitBuilder.MatrixPortrait portrait, bool isMagnetostatic, IRightPart source)
+        private void AssembleInternal(
+            IMesh mesh,
+            IReadOnlyList<Material> materials,
+            MatrixPortraitBuilder.MatrixPortrait portrait,
+            bool isMagnetostatic,
+            IRightPart source)
         {
             int nodeCount = mesh.NodeCount;
             _matrix = new SparseMatrix(portrait);
@@ -32,8 +52,12 @@ namespace ElectroMagSimulator.Core
             foreach (var element in mesh.Elements)
             {
                 var nodes = element.NodeIds.Select(id => mesh.GetNode(id)).ToArray();
-                var material = mesh.GetMaterialForElement(element)
-                    ?? throw new Exception($"Не найден материал для области {element.AreaId}");
+
+                var material = materials.FirstOrDefault(m => m.AreaId == element.AreaId);
+                Debug.WriteLine($"Element {element.Id} has AreaId {element.AreaId}");
+                Debug.WriteLine("Materials list: " + string.Join(", ", materials.Select(m => $"Id={m.AreaId}")));
+                if (material == null)
+                    throw new Exception($"Не найден материал для области {element.AreaId}");
 
                 double lambda = 1.0 / material.Mu;
                 double sourceValue = isMagnetostatic ? material.TokJ : 1.0;
@@ -60,7 +84,14 @@ namespace ElectroMagSimulator.Core
             }
         }
 
-        private void ComputeLocalMatrixAndRhs(Node[] nodes, double lambda, double sourceValue, double[,] localMatrix, double[] localRhs, bool isMagnetostatic, IRightPart source)
+        private void ComputeLocalMatrixAndRhs(
+            Node[] nodes,
+            double lambda,
+            double sourceValue,
+            double[,] localMatrix,
+            double[] localRhs,
+            bool isMagnetostatic,
+            IRightPart source)
         {
             double x1 = nodes[0].X;
             double y1 = nodes[0].Y;
