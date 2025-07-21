@@ -1,5 +1,4 @@
-﻿using ElectroMagSimulator.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -18,7 +17,7 @@ namespace ElectroMagSimulator.Core
             IRightPart source)
         {
             foreach (var mat in materials)
-                Debug.WriteLine($"Material: AreaId={mat.AreaId}, Mu={mat.Mu}, TokJ={mat.TokJ}");
+                Debug.WriteLine($"Material: MaterialId={mat.MaterialId}, Mu={mat.Mu}, TokJ={mat.TokJ}");
 
             AssembleInternal(mesh, materials, portrait, isMagnetostatic: false, source);
         }
@@ -29,7 +28,7 @@ namespace ElectroMagSimulator.Core
             MatrixPortraitBuilder.MatrixPortrait portrait)
         {
             foreach (var mat in materials)
-                Debug.WriteLine($"Material: AreaId={mat.AreaId}, Mu={mat.Mu}, TokJ={mat.TokJ}");
+                Debug.WriteLine($"Material: MaterialId={mat.MaterialId}, Mu={mat.Mu}, TokJ={mat.TokJ}");
 
             AssembleInternal(mesh, materials, portrait, isMagnetostatic: true, source: null);
         }
@@ -53,11 +52,10 @@ namespace ElectroMagSimulator.Core
             {
                 var nodes = element.NodeIds.Select(id => mesh.GetNode(id)).ToArray();
 
-                var material = materials.FirstOrDefault(m => m.AreaId == element.AreaId);
-                Debug.WriteLine($"Element {element.Id} has AreaId {element.AreaId}");
-                Debug.WriteLine("Materials list: " + string.Join(", ", materials.Select(m => $"Id={m.AreaId}")));
+                var material = mesh.GetMaterialForElement(element);
                 if (material == null)
-                    throw new Exception($"Не найден материал для области {element.AreaId}");
+                    throw new Exception($"Не найден материал для элемента {element.Id} (AreaId={element.AreaId})");
+
 
                 double lambda = 1.0 / material.Mu;
                 double sourceValue = isMagnetostatic ? material.TokJ : 1.0;

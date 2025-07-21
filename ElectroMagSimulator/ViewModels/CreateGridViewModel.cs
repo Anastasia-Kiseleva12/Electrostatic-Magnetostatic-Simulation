@@ -1,6 +1,5 @@
 ﻿using Avalonia.Data.Converters;
 using ElectroMagSimulator.Core;
-using ElectroMagSimulator.Models;
 using ReactiveUI;
 using System;
 using System.Collections.Generic;

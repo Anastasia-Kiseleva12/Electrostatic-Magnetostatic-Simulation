@@ -1,9 +1,8 @@
-﻿using ElectroMagSimulator.Core;
-using ReactiveUI;
+﻿using ReactiveUI;
 using System;
 using System.Collections.Generic;
 
-namespace ElectroMagSimulator.Models
+namespace ElectroMagSimulator.Core
 {
     // Описание области
     public interface IGridArea
@@ -48,14 +47,17 @@ namespace ElectroMagSimulator.Models
         Node GetNode(int index);
         Element GetElement(int index);
 
-        /// Новый контракт:
-        Material? GetMaterialForElement(Element element);
         List<IGridArea> Areas { get; }
 
-        // Материалы можно запрашивать/обновлять
         List<Material> GetMaterials();
         void SetMaterials(List<Material> materials);
+
+        Dictionary<int, int> GetAreaMaterialMap();
+        void SetAreaMaterialMap(Dictionary<int, int> map);
+        Material? GetMaterialForElement(Element element);
+
     }
+
 
     // Сборка глобальной матрицы
     public interface IMatrixAssembler
@@ -93,9 +95,10 @@ namespace ElectroMagSimulator.Models
 
     public class Material
     {
+        public int MaterialId { get; set; }  // УНИКАЛЬНЫЙ id материала
+        public string Name { get; set; }
         public double Mu { get; set; }
         public double TokJ { get; set; }
-        public int AreaId { get; set; }
         public string Color { get; set; }
     }
 

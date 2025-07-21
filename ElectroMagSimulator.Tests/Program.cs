@@ -1,5 +1,4 @@
-﻿using ElectroMagSimulator.Models;
-using ElectroMagSimulator.Core;
+﻿using ElectroMagSimulator.Core;
 
 class Program
 {

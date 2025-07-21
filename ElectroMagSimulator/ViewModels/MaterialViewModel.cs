@@ -1,4 +1,4 @@
-﻿using ElectroMagSimulator.Models;
+﻿using ElectroMagSimulator.Core;
 using ReactiveUI;
 using System.Collections.ObjectModel;
 
@@ -60,8 +60,14 @@ namespace ElectroMagSimulator.ViewModels
             "Green",
             "Blue",
             "Yellow",
-            "Black"
+            "Black",
+            "Orange",
+            "Purple",
+            "Cyan",
+            "Magenta",
+            "Gray"
         };
+
 
         /// <summary>
         /// Получаем числовое значение или NaN если некорректно
@@ -97,12 +103,14 @@ namespace ElectroMagSimulator.ViewModels
         {
             return new Material
             {
-                AreaId = AreaId,
-                Mu = PropertyValue,
-                TokJ = TokJ,
-                Color = Color
+                MaterialId = this.AreaId,  
+                Name = this.Name,
+                Mu = this.PropertyValue,
+                TokJ = this.TokJ,
+                Color = this.Color
             };
         }
+
         public override string ToString()
         {
             return $"{Name} (ID: {AreaId}, Свойство: {PropertyValueStr}, Цвет: {Color})";

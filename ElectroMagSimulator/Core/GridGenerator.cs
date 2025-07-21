@@ -1,5 +1,4 @@
-﻿using ElectroMagSimulator.Models;
-using ElectroMagSimulator.TestUtils;
+﻿using ElectroMagSimulator.TestUtils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -143,10 +142,9 @@ namespace ElectroMagSimulator.Core
             {
                 var a = _areas[i];
                 if (x >= a.X0 && x <= a.X1 && y >= a.Y0 && y <= a.Y1)
-                    return i;
+                    return a.AreaId;  // ВАЖНО: брать Id из области, а не индекс i!
             }
-
-            return -1;
+            throw new Exception($"Точка ({x},{y}) не попала ни в одну область");
         }
 
     }

@@ -23,9 +23,16 @@
 		<Border DockPanel.Dock="Top" Background="#E0F2F1" Height="40">
 			<StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0" Spacing="20">
 				<TextBlock Text="ElectroMagSimulator" FontWeight="Bold" FontSize="16" VerticalAlignment="Center" />
-				<Button Content="Файл" Background="Transparent" BorderBrush="Transparent" />
-				<Button Content="Сохранить" Background="Transparent" BorderBrush="Transparent" />
-				<Button Content="Помощь" Background="Transparent" BorderBrush="Transparent" />
+				<Menu>
+					<MenuItem Header="Файл">
+						<MenuItem Header="Открыть" Command="{Binding OpenProjectCommand}" />
+						<MenuItem Header="Сохранить" Command="{Binding SaveProjectCommand}" />
+					</MenuItem>
+					<MenuItem Header="_Справка">
+						<MenuItem Header="Помощь" />
+						<MenuItem Header="Документация"/>
+					</MenuItem>
+				</Menu>
 			</StackPanel>
 		</Border>
 
@@ -119,7 +126,7 @@
 
 				<!-- Панель точек -->
 				<Border Background="#E0F2F1"
-                        Width="550"
+                        Width="750"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Top"
                         Margin="10,60,10,10"
@@ -132,28 +139,44 @@
                                 Margin="0,0,0,10" />
 
 						<!-- Заголовок -->
-						<StackPanel Orientation="Horizontal" Margin="2">
-							<TextBlock Text="X" Width="60" FontWeight="Bold" TextAlignment="Center"/>
-							<TextBlock Text="Y" Width="60" FontWeight="Bold" TextAlignment="Center"/>
-							<TextBlock Text="Az" Width="80" FontWeight="Bold" TextAlignment="Center"/>
-							<TextBlock Text="Bx" Width="80" FontWeight="Bold" TextAlignment="Center"/>
-							<TextBlock Text="By" Width="80" FontWeight="Bold" TextAlignment="Center"/>
-							<TextBlock Text="|B|" Width="80" FontWeight="Bold" TextAlignment="Center"/>
-						</StackPanel>
+						<Grid>
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition Width="*"/>
+								<ColumnDefinition Width="*"/>
+								<ColumnDefinition Width="*"/>
+								<ColumnDefinition Width="*"/>
+								<ColumnDefinition Width="*"/>
+								<ColumnDefinition Width="*"/>
+							</Grid.ColumnDefinitions>
+							<TextBlock Grid.Column="0" Text="X" FontWeight="Bold" TextAlignment="Center"/>
+							<TextBlock Grid.Column="1" Text="Y" FontWeight="Bold" TextAlignment="Center"/>
+							<TextBlock Grid.Column="2" Text="Az" FontWeight="Bold" TextAlignment="Center"/>
+							<TextBlock Grid.Column="3" Text="Bx" FontWeight="Bold" TextAlignment="Center"/>
+							<TextBlock Grid.Column="4" Text="By" FontWeight="Bold" TextAlignment="Center"/>
+							<TextBlock Grid.Column="5" Text="|B|" FontWeight="Bold" TextAlignment="Center"/>
+						</Grid>
 
 						<!-- Список значений -->
 						<ScrollViewer Height="300">
 							<ItemsControl ItemsSource="{Binding ProbePoints}">
 								<ItemsControl.ItemTemplate>
 									<DataTemplate>
-										<StackPanel Orientation="Horizontal" Margin="2">
-											<TextBox Text="{Binding X, StringFormat=F2}" Width="60" IsReadOnly="True" HorizontalContentAlignment="Center"/>
-											<TextBox Text="{Binding Y, StringFormat=F2}" Width="60" IsReadOnly="True" HorizontalContentAlignment="Center"/>
-											<TextBox Text="{Binding Az, StringFormat=F4}" Width="80" IsReadOnly="True" HorizontalContentAlignment="Center"/>
-											<TextBox Text="{Binding Bx, StringFormat=F4}" Width="80" IsReadOnly="True" HorizontalContentAlignment="Center"/>
-											<TextBox Text="{Binding By, StringFormat=F4}" Width="80" IsReadOnly="True" HorizontalContentAlignment="Center"/>
-											<TextBox Text="{Binding BAbs, StringFormat=F4}" Width="80" IsReadOnly="True" HorizontalContentAlignment="Center"/>
-										</StackPanel>
+										<Grid>
+											<Grid.ColumnDefinitions>
+												<ColumnDefinition Width="*"/>
+												<ColumnDefinition Width="*"/>
+												<ColumnDefinition Width="*"/>
+												<ColumnDefinition Width="*"/>
+												<ColumnDefinition Width="*"/>
+												<ColumnDefinition Width="*"/>
+											</Grid.ColumnDefinitions>
+											<TextBox Grid.Column="0" Text="{Binding X, StringFormat=F7}" IsReadOnly="True" HorizontalContentAlignment="Center"/>
+											<TextBox Grid.Column="1" Text="{Binding Y, StringFormat=F7}"  IsReadOnly="True" HorizontalContentAlignment="Center"/>
+											<TextBox Grid.Column="2" Text="{Binding Az, StringFormat=F7}"  IsReadOnly="True" HorizontalContentAlignment="Center"/>
+											<TextBox Grid.Column="3" Text="{Binding Bx, StringFormat=F7}"  IsReadOnly="True" HorizontalContentAlignment="Center"/>
+											<TextBox Grid.Column="4" Text="{Binding By, StringFormat=F7}"  IsReadOnly="True" HorizontalContentAlignment="Center"/>
+											<TextBox Grid.Column="5" Text="{Binding BAbs, StringFormat=F7}"  IsReadOnly="True" HorizontalContentAlignment="Center"/>
+										</Grid>
 									</DataTemplate>
 								</ItemsControl.ItemTemplate>
 							</ItemsControl>

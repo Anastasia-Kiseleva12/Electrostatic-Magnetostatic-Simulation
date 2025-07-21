@@ -1,101 +1,64 @@
-﻿using ElectroMagSimulator.Models;
+﻿using ElectroMagSimulator.Core;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-namespace ElectroMagSimulator.Core
+public class SimpleMesh : IMesh
 {
-    public class SimpleMesh : IMesh
+    private readonly List<Node> _nodes;
+    private readonly List<Element> _elements;
+    private readonly List<IGridArea> _areas;
+    private List<Material> _materials;
+
+    // areaId → materialId (назначение материала областям)
+    private readonly Dictionary<int, int> _areaMaterialMap = new();
+
+    public IEnumerable<Node> Nodes => _nodes;
+    public IEnumerable<Element> Elements => _elements;
+    public int NodeCount => _nodes.Count;
+    public int ElementCount => _elements.Count;
+    public List<IGridArea> Areas => _areas;
+
+    public SimpleMesh(List<Node> nodes, List<Element> elements, List<IGridArea> areas, List<Material> materials)
     {
-        public IEnumerable<Node> Nodes => _nodes;
-        public IEnumerable<Element> Elements => _elements;
-        public int NodeCount => _nodes.Count;
-        public int ElementCount => _elements.Count;
+        _nodes = nodes;
+        _elements = elements;
+        _areas = areas;
+        _materials = materials;
+    }
 
-        private readonly List<Node> _nodes;
-        private readonly List<Element> _elements;
-        private readonly List<IGridArea> _areas;
-        private readonly List<Material> _materials;
+    public Node GetNode(int index) => _nodes[index];
+    public Element GetElement(int index) => _elements[index];
 
-        // Новое: маппинг elementId → materialId
-        private readonly Dictionary<int, int> _elementMaterialMap = new();
+    public List<Material> GetMaterials() => _materials;
 
-        public List<IGridArea> Areas => _areas;
+    public void SetMaterials(List<Material> materials) => _materials = materials;
 
-        public SimpleMesh(
-            List<Node> nodes,
-            List<Element> elements,
-            List<IGridArea> areas,
-            List<Material> materials)
+    public Dictionary<int, int> GetAreaMaterialMap() => _areaMaterialMap;
+
+    public void SetAreaMaterialMap(Dictionary<int, int> map)
+    {
+        _areaMaterialMap.Clear();
+        foreach (var kvp in map)
+            _areaMaterialMap[kvp.Key] = kvp.Value;
+    }
+
+    public void AssignMaterialToArea(int areaId, int materialId)
+    {
+        _areaMaterialMap[areaId] = materialId;
+    }
+    /// Получаем материал элемента через area → materialId
+    public Material? GetMaterialForElement(Element element)
+    {
+        if (_areaMaterialMap.TryGetValue(element.AreaId, out int materialId))
         {
-            _nodes = nodes;
-            _elements = elements;
-            _areas = areas;
-            _materials = materials;
-
-            // Изначально: никто не имеет материала
-            foreach (var elem in _elements)
-            {
-                elem.AreaId = -1;
-            }
+            return _materials.FirstOrDefault(m => m.MaterialId == materialId);
         }
-
-        public Node GetNode(int index) => _nodes[index];
-
-        public Element GetElement(int index) => _elements[index];
-
-        /// Присвоение материала всем элементам, попавшим в геом.область
-        public void AssignMaterialToArea(int areaId, int materialId)
-        {
-            var area = _areas.FirstOrDefault(a => a.AreaId == areaId);
-            if (area == null)
-            {
-                Debug.WriteLine($"⚠️ Область с AreaId={areaId} не найдена");
-                return;
-            }
-
-            foreach (var elem in _elements)
-            {
-                var nodes = elem.NodeIds.Select(id => GetNode(id)).ToArray();
-
-                // Центр элемента
-                double centerX = nodes.Average(n => n.X);
-                double centerY = nodes.Average(n => n.Y);
-
-                if (centerX >= area.X0 && centerX <= area.X1 &&
-                    centerY >= area.Y0 && centerY <= area.Y1)
-                {
-                    _elementMaterialMap[elem.Id] = materialId;
-                    elem.AreaId = areaId;  // Обновляем AreaId для отображения
-                }
-            }
-        }
-
-        /// Получение материала элемента по маппингу
-        public Material? GetMaterialForElement(Element element)
-        {
-            if (_elementMaterialMap.TryGetValue(element.Id, out int materialId))
-            {
-                var mat = _materials.FirstOrDefault(m => m.AreaId == materialId);
-                if (mat == null)
-                    Debug.WriteLine($"⚠️ Материал с AreaId={materialId} не найден");
-                return mat;
-            }
-            return null;
-        }
-
-        public List<Material> GetMaterials() => _materials;
-
-        public void SetMaterials(List<Material> materials)
-        {
-            _materials.Clear();
-            _materials.AddRange(materials);
-        }
-
-        /// Проверка: все ли элементы имеют назначенный материал
-        public bool AllElementsHaveMaterial()
-        {
-            return _elements.All(e => _elementMaterialMap.ContainsKey(e.Id));
-        }
+        return null;
+    }
+    /// Проверяем, есть ли назначение для всех областей
+    public bool AllAreasHaveMaterial()
+    {
+        return _areas.All(a => _areaMaterialMap.ContainsKey(a.AreaId));
     }
 }

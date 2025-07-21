@@ -1,10 +1,11 @@
 ﻿using ElectroMagSimulator.Core;
-using ElectroMagSimulator.Models;
+using ElectroMagSimulator.IO;
 using ElectroMagSimulator.TestUtils;
 using ReactiveUI;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
@@ -94,16 +95,19 @@ namespace ElectroMagSimulator.ViewModels
         public ICommand CreateGridCommand { get; }
         public ReactiveCommand<Unit, Unit> ToggleProbeModeCommand { get; }
         public ReactiveCommand<Unit, Unit> ToggleProbePanelCommand { get; }
+        public ReactiveCommand<Unit, Unit> OpenProjectCommand { get; }
+        public ReactiveCommand<Unit, Unit> SaveProjectCommand { get; }
+        private NotifyCollectionChangedEventHandler? _materialsChangedHandler;
 
         public event Action? CreateGridRequested;
         public IPostProcessor? PostProcessor { get; private set; }
 
         public MainWindowViewModel()
         {
+            Materials.Clear();
             Materials.Add(new MaterialViewModel("Магнит", 1.0, "Red", 0, 0.0));
             Materials.Add(new MaterialViewModel("Воздух", 2.0, "Green", 1, 0.0));
             Materials.Add(new MaterialViewModel("+ Добавить материал...", 0.0, "Gray", -1, 0.0));
-
             SelectedMaterial = Materials.FirstOrDefault();
             SolveCommand = ReactiveCommand.Create(Solve);
             ClearCommand = ReactiveCommand.Create(Clear);
@@ -124,7 +128,104 @@ namespace ElectroMagSimulator.ViewModels
             {
                 IsProbePanelOpen = !IsProbePanelOpen;
             });
-            Materials.CollectionChanged += (_, _) => SyncMaterialsToMesh();
+            OpenProjectCommand = ReactiveCommand.Create(OpenProject);
+            SaveProjectCommand = ReactiveCommand.Create(SaveProject);
+            _materialsChangedHandler = (_, _) => SyncMaterialsToMesh();
+            Materials.CollectionChanged += _materialsChangedHandler;
+
+        }
+        public async void SaveProject()
+        {
+            if (_mesh == null)
+            {
+                Console.WriteLine("Нет сетки для сохранения.");
+                return;
+            }
+
+            var sfd = new Avalonia.Controls.SaveFileDialog
+            {
+                Title = "Сохранить проект",
+                Filters = { new Avalonia.Controls.FileDialogFilter { Name = "JSON", Extensions = { "json" } } }
+            };
+            var filePath = await sfd.ShowAsync(App.Current.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime lifetime ? lifetime.MainWindow : null);
+
+            if (!string.IsNullOrEmpty(filePath))
+            {
+                var project = new ProjectData
+                {
+                    Nodes = _mesh.Nodes.ToList(),
+                    Elements = _mesh.Elements.ToList(),
+                    Materials = _mesh.GetMaterials(),
+                    Areas = _mesh.Areas.OfType<GridArea>().ToList(),
+                    ProbePoints = ProbePoints.ToList(),
+                    AreaMaterialMap = _mesh.GetAreaMaterialMap(),
+                    XAxis = LastXAxis as GridAxis,   
+                    YAxis = LastYAxis as GridAxis    
+                };
+                IO.ProjectSerializer.SaveToFile(project, filePath);
+                Console.WriteLine($"Проект сохранен: {filePath}");
+            }
+        }
+        public async void OpenProject()
+        {
+            var ofd = new Avalonia.Controls.OpenFileDialog
+            {
+                Title = "Открыть проект",
+                AllowMultiple = false,
+                Filters = { new Avalonia.Controls.FileDialogFilter { Name = "JSON", Extensions = { "json" } } }
+            };
+
+            var files = await ofd.ShowAsync(App.Current.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime lifetime ? lifetime.MainWindow : null);
+
+            if (files != null && files.Length > 0)
+            {
+                var project = IO.ProjectSerializer.LoadFromFile(files[0]);
+
+                _mesh = new SimpleMesh(
+                    project.Nodes,
+                    project.Elements,
+                    project.Areas.Cast<IGridArea>().ToList(),
+                    project.Materials
+                );
+                LastAreas = project.Areas.Cast<IGridArea>().ToList();
+                LastXAxis = project.XAxis;
+                LastYAxis = project.YAxis;
+                _mesh.SetAreaMaterialMap(project.AreaMaterialMap);
+
+                ProbePoints.Clear();
+                foreach (var p in project.ProbePoints)
+                    ProbePoints.Add(p);
+
+                if (_materialsChangedHandler != null)
+                    Materials.CollectionChanged -= _materialsChangedHandler;
+
+                Materials.Clear();
+                foreach (var material in project.Materials)
+                {
+                    Materials.Add(new MaterialViewModel(
+                        name: material.Name,
+                        propertyValue: material.Mu,
+                        color: material.Color,
+                        areaId: material.MaterialId,
+                        tokJ: material.TokJ
+                    ));
+                }
+
+                Materials.Add(new MaterialViewModel("+ Добавить материал...", 0.0, "Gray", -1, 0.0));
+
+                if (_materialsChangedHandler != null)
+                    Materials.CollectionChanged += _materialsChangedHandler;
+
+                SelectedMaterial = Materials.FirstOrDefault();
+
+                // Обновляем mesh материалами
+                SyncMaterialsToMesh();
+                GridButtonText = "✏️ Редактировать сетку";
+                // Вызвать событие обновления сетки
+                GridGenerated?.Invoke(_mesh);
+
+                Console.WriteLine($"Проект открыт: {files[0]}");
+            }
         }
         public void AddProbePoint(double x, double y, ProbePoint point)
         {
@@ -137,17 +238,18 @@ namespace ElectroMagSimulator.ViewModels
             if (_mesh is SimpleMesh simpleMesh)
             {
                 var converted = Materials
-                    .Where(m => m.AreaId >= 0)
+                    .Where(m => m.AreaId >= 0) // исключаем "+ Добавить материал..."
                     .Select(m => m.ToMaterial())
                     .ToList();
 
+                simpleMesh.SetMaterials(converted);
+
                 Debug.WriteLine("Список материалов для сетки:");
                 foreach (var mat in converted)
-                    Debug.WriteLine($"AreaId: {mat.AreaId}, Color: {mat.Color}");
-
-                simpleMesh.SetMaterials(converted);
+                    Debug.WriteLine($"MaterialId: {mat.MaterialId}, Color: {mat.Color}, Name: {mat.Name}");
             }
         }
+
         public void AssignMaterialToArea(IGridArea area, MaterialViewModel materialVm)
         {
             if (_mesh is SimpleMesh simpleMesh)

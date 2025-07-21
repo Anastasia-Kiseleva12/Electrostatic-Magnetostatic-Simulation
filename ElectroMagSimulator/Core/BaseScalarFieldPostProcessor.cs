@@ -1,5 +1,4 @@
-﻿using ElectroMagSimulator.Models;
-using System;
+﻿using System;
 using System.Linq;
 
 namespace ElectroMagSimulator.Core

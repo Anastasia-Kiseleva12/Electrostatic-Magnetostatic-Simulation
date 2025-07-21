@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using ElectroMagSimulator.Models;
 
 namespace ElectroMagSimulator.Core
 {
