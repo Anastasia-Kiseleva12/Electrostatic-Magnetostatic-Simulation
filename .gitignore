@@ -29,9 +29,6 @@ Generated_Code/
 # Avalonia XAML cache
 .g/
 
-# Avalonia runtime-generated files
-*.axaml.cs
-
 # Backup & temporary files
 *.bak
 *.tmp
