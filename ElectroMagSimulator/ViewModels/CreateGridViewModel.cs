@@ -27,8 +27,28 @@ namespace ElectroMagSimulator.ViewModels
 
         public ObservableCollection<AreaViewModel> Areas { get; } = new();
 
-        public bool DoubleToX { get; set; }
-        public bool DoubleToY { get; set; }
+        private bool _doubleToX;
+        public bool DoubleToX
+        {
+            get => _doubleToX;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _doubleToX, value);
+                if (!_isLoading) IsXAxisModified = true;   // важно
+            }
+        }
+
+        private bool _doubleToY;
+        public bool DoubleToY
+        {
+            get => _doubleToY;
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _doubleToY, value);
+                if (!_isLoading) IsYAxisModified = true;   // важно
+            }
+        }
+
 
         private bool _isXConfigVisible;
         public bool IsXConfigVisible
@@ -50,6 +70,21 @@ namespace ElectroMagSimulator.ViewModels
         public ReactiveCommand<Unit, Unit> CancelCommand { get; }
         public GridAxisSettings XSettings { get; } = new();
         public GridAxisSettings YSettings { get; } = new();
+
+        private bool _isXAxisModified = true;  // по умолчанию true, чтобы не забыли включить
+        public bool IsXAxisModified
+        {
+            get => _isXAxisModified;
+            set => this.RaiseAndSetIfChanged(ref _isXAxisModified, value);
+        }
+
+        private bool _isYAxisModified = true;
+        public bool IsYAxisModified
+        {
+            get => _isYAxisModified;
+            set => this.RaiseAndSetIfChanged(ref _isYAxisModified, value);
+        }
+
         public CreateGridViewModel()
         {
             ConfigureXCommand = ReactiveCommand.Create(ConfigureX);
@@ -57,8 +92,25 @@ namespace ElectroMagSimulator.ViewModels
             ConfirmCommand = ReactiveCommand.Create(OnConfirm);
             CancelCommand = ReactiveCommand.Create(OnCancel);
             UpdateAreas();
+            HookAxisDirtyTracking();
         }
+        private void HookAxisDirtyTracking()
+        {
+            void trackX() { if (!_isLoading) IsXAxisModified = true; }
+            void trackY() { if (!_isLoading) IsYAxisModified = true; }
 
+            XSettings.PropertyChanged += (_, __) => trackX();
+            XSettings.XPoints.CollectionChanged += (_, __) => trackX();
+            XSettings.HMin.CollectionChanged += (_, __) => trackX();
+            XSettings.DH.CollectionChanged += (_, __) => trackX();
+            XSettings.SH.CollectionChanged += (_, __) => trackX();
+
+            YSettings.PropertyChanged += (_, __) => trackY();
+            YSettings.XPoints.CollectionChanged += (_, __) => trackY();
+            YSettings.HMin.CollectionChanged += (_, __) => trackY();
+            YSettings.DH.CollectionChanged += (_, __) => trackY();
+            YSettings.SH.CollectionChanged += (_, __) => trackY();
+        }
         private void UpdateAreas()
         {
             while (Areas.Count < AreaCount)
@@ -67,67 +119,78 @@ namespace ElectroMagSimulator.ViewModels
             while (Areas.Count > AreaCount)
                 Areas.RemoveAt(Areas.Count - 1);
         }
+        private bool _isLoading;
         public void LoadGridData(List<IGridArea> areas, IGridAxis xAxis, IGridAxis yAxis)
         {
+            _isLoading = true;
             AreaCount = areas.Count;
             Areas.Clear();
 
-            foreach (var area in areas)
+            try
             {
-                Areas.Add(new AreaViewModel
+                foreach (var area in areas)
                 {
-                    X0 = area.X0.ToString(CultureInfo.InvariantCulture),
-                    X1 = area.X1.ToString(CultureInfo.InvariantCulture),
-                    Y0 = area.Y0.ToString(CultureInfo.InvariantCulture),
-                    Y1 = area.Y1.ToString(CultureInfo.InvariantCulture),
-                });
+                    Areas.Add(new AreaViewModel
+                    {
+                        X0 = area.X0.ToString(CultureInfo.InvariantCulture),
+                        X1 = area.X1.ToString(CultureInfo.InvariantCulture),
+                        Y0 = area.Y0.ToString(CultureInfo.InvariantCulture),
+                        Y1 = area.Y1.ToString(CultureInfo.InvariantCulture),
+                    });
+                }
+
+                DoubleToX = xAxis.DoubleMode > 0;
+                DoubleToY = yAxis.DoubleMode > 0;
+
+                // X
+                XSettings.X0 = xAxis.Start.ToString(CultureInfo.InvariantCulture);
+                XSettings.KolX = (xAxis.Points.Count + 1).ToString();  // учитываем левую границу + внутренние точки
+
+                XSettings.XPoints.Clear();
+                foreach (var p in xAxis.Points)
+                    XSettings.XPoints.Add(p.ToString(CultureInfo.InvariantCulture));
+
+                XSettings.HMin.Clear();
+                foreach (var h in xAxis.HMin)
+                    XSettings.HMin.Add(h.ToString(CultureInfo.InvariantCulture));
+
+                XSettings.DH.Clear();
+                foreach (var dh in xAxis.DH)
+                    XSettings.DH.Add(dh.ToString(CultureInfo.InvariantCulture));
+
+                XSettings.SH.Clear();
+                foreach (var sh in xAxis.SH)
+                    XSettings.SH.Add(sh.ToString());
+
+                // Y
+                YSettings.X0 = yAxis.Start.ToString(CultureInfo.InvariantCulture);
+                YSettings.KolX = (yAxis.Points.Count + 1).ToString();
+
+                YSettings.XPoints.Clear();
+                foreach (var p in yAxis.Points)
+                    YSettings.XPoints.Add(p.ToString(CultureInfo.InvariantCulture));
+
+                YSettings.HMin.Clear();
+                foreach (var h in yAxis.HMin)
+                    YSettings.HMin.Add(h.ToString(CultureInfo.InvariantCulture));
+
+                YSettings.DH.Clear();
+                foreach (var dh in yAxis.DH)
+                    YSettings.DH.Add(dh.ToString(CultureInfo.InvariantCulture));
+
+                YSettings.SH.Clear();
+                foreach (var sh in yAxis.SH)
+                    YSettings.SH.Add(sh.ToString());
+
+                IsXConfigVisible = true;
+                IsYConfigVisible = true;
             }
-
-            DoubleToX = xAxis.DoubleMode > 0;
-            DoubleToY = yAxis.DoubleMode > 0;
-
-            // X
-            XSettings.X0 = xAxis.Start.ToString(CultureInfo.InvariantCulture);
-            XSettings.KolX = (xAxis.Points.Count + 1).ToString();  // учитываем левую границу + внутренние точки
-
-            XSettings.XPoints.Clear();
-            foreach (var p in xAxis.Points)
-                XSettings.XPoints.Add(p.ToString(CultureInfo.InvariantCulture));
-
-            XSettings.HMin.Clear();
-            foreach (var h in xAxis.HMin)
-                XSettings.HMin.Add(h.ToString(CultureInfo.InvariantCulture));
-
-            XSettings.DH.Clear();
-            foreach (var dh in xAxis.DH)
-                XSettings.DH.Add(dh.ToString(CultureInfo.InvariantCulture));
-
-            XSettings.SH.Clear();
-            foreach (var sh in xAxis.SH)
-                XSettings.SH.Add(sh.ToString());
-
-            // Y
-            YSettings.X0 = yAxis.Start.ToString(CultureInfo.InvariantCulture);
-            YSettings.KolX = (yAxis.Points.Count + 1).ToString();
-
-            YSettings.XPoints.Clear();
-            foreach (var p in yAxis.Points)
-                YSettings.XPoints.Add(p.ToString(CultureInfo.InvariantCulture));
-
-            YSettings.HMin.Clear();
-            foreach (var h in yAxis.HMin)
-                YSettings.HMin.Add(h.ToString(CultureInfo.InvariantCulture));
-
-            YSettings.DH.Clear();
-            foreach (var dh in yAxis.DH)
-                YSettings.DH.Add(dh.ToString(CultureInfo.InvariantCulture));
-
-            YSettings.SH.Clear();
-            foreach (var sh in yAxis.SH)
-                YSettings.SH.Add(sh.ToString());
-
-            IsXConfigVisible = true;
-            IsYConfigVisible = true;
+            finally
+            {
+                IsXAxisModified = false;
+                IsYAxisModified = false;
+                _isLoading = false;
+            }
         }
         private void ConfigureX()
         {
@@ -165,6 +228,7 @@ namespace ElectroMagSimulator.ViewModels
                 XSettings.SH.Add("1");
 
             IsXConfigVisible = true;
+            IsXAxisModified = true;
         }
         private void ConfigureY()
         {
@@ -202,17 +266,22 @@ namespace ElectroMagSimulator.ViewModels
                 YSettings.SH.Add("1");
 
             IsYConfigVisible = true;
+            IsYAxisModified = true;
         }
 
 
-        public event Action<List<IGridArea>, IGridAxis, IGridAxis>? GridSettingsConfirmed;
+        public event Action<List<IGridArea>, IGridAxis, IGridAxis, bool, bool>? GridSettingsConfirmed;
+
         private void OnConfirm()
         {
             GridSettingsConfirmed?.Invoke(
-            Areas.Select((a, index) => a.ToGridArea(index)).ToList(),
-            XSettings.ToGridAxis(DoubleToX ? 1 : 0),
-            YSettings.ToGridAxis(DoubleToY ? 1 : 0)
-            );
+    Areas.Select((a, index) => a.ToGridArea(index)).ToList(),
+    XSettings.ToGridAxis(DoubleToX ? 1 : 0),
+    YSettings.ToGridAxis(DoubleToY ? 1 : 0),
+    IsXAxisModified,
+    IsYAxisModified
+);
+
 
             RequestClose?.Invoke(true);
         }

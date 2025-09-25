@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Globalization;
 
 namespace ElectroMagSimulator.Core
 {
@@ -19,27 +18,54 @@ namespace ElectroMagSimulator.Core
             _xStart = xAxis.Start;
             _yStart = yAxis.Start;
 
-            var xSteps = CalculateSteps(_xStart, xAxis.Points, xAxis.HMin, xAxis.DH, xAxis.SH);
-            var ySteps = CalculateSteps(_yStart, yAxis.Points, yAxis.HMin, yAxis.DH, yAxis.SH);
+            var xCoords = CalculateCoordinates(_xStart, xAxis.Points, xAxis.HMin, xAxis.DH, xAxis.SH, xAxis.DoubleMode);
+            var yCoords = CalculateCoordinates(_yStart, yAxis.Points, yAxis.HMin, yAxis.DH, yAxis.SH, yAxis.DoubleMode);
 
-            Generate(xSteps, ySteps);
+            GenerateFromCoords(xCoords, yCoords);
         }
 
-        public void Generate(IReadOnlyList<double> xSteps, IReadOnlyList<double> ySteps)
+        private List<double> CalculateCoordinates(double start, IReadOnlyList<double> points,
+            IReadOnlyList<double> hmin, IReadOnlyList<double> dh,
+            IReadOnlyList<int> sh, double doubleMode)
         {
-            if (_areas == null)
-                throw new InvalidOperationException("Список областей не задан. Сначала вызовите перегруженный Generate с областями.");
+            var coords = new SortedSet<double>();
+            double end = start;
 
-            var xCoords = new List<double> { _xStart };
-            foreach (var s in xSteps)
-                xCoords.Add(xCoords.Last() + s);
+            for (int i = 0; i < points.Count; i++)
+            {
+                double beg = end;
+                end = points[i];
+                double sign = sh[i];
+                double rb = sign > 0 ? beg : end;
+                double re = sign > 0 ? end : beg;
 
-            var yCoords = new List<double> { _yStart };
-            foreach (var s in ySteps)
-                yCoords.Add(yCoords.Last() + s);
+                coords.Add(rb);
 
+                double k = dh[i];
+                double h = hmin[i] * sign;
+
+                if (doubleMode > 0.0)
+                    h /= doubleMode * 2.0;
+
+                double newPos = rb + h;
+                while (sign * newPos < re * sign)
+                {
+                    coords.Add(newPos);
+                    h *= k;
+                    newPos += h;
+                }
+
+                coords.Add(re);
+            }
+
+            return coords.ToList();
+        }
+
+        private void GenerateFromCoords(IReadOnlyList<double> xCoords, IReadOnlyList<double> yCoords)
+        {
             var nodes = new List<Node>();
             int nodeId = 0;
+
             for (int iy = 0; iy < yCoords.Count; iy++)
             {
                 for (int ix = 0; ix < xCoords.Count; ix++)
@@ -66,7 +92,6 @@ namespace ElectroMagSimulator.Core
                     int n2 = n0 + cols;
                     int n3 = n2 + 1;
 
-                    // Центр элемента
                     double centerX = 0.25 * (xCoords[ix] + xCoords[ix + 1] + xCoords[ix] + xCoords[ix + 1]);
                     double centerY = 0.25 * (yCoords[iy] + yCoords[iy + 1] + yCoords[iy] + yCoords[iy + 1]);
 
@@ -81,52 +106,8 @@ namespace ElectroMagSimulator.Core
                 }
             }
 
-
             var materials = new List<Material>();
-            _mesh = new SimpleMesh(nodes, elements, _areas, materials);
-        }
-
-        private List<double> CalculateSteps(double start, IReadOnlyList<double> innerPoints,
-                                  IReadOnlyList<double> hmin, IReadOnlyList<double> dh,
-                                  IReadOnlyList<int> sh)
-        {
-            var fullPoints = new List<double> { start };
-            fullPoints.AddRange(innerPoints);
-            var steps = new List<double>();
-
-            for (int i = 0; i < fullPoints.Count - 1; i++)
-            {
-                double L = fullPoints[i + 1] - fullPoints[i];
-                double h = hmin[i];
-                double d = dh[i];
-                int sgn = sh[i];
-
-                int N = EstimateStepsCount(L, h, d);
-                double sum = 0;
-                double lastStep = 0;
-
-                for (int n = 0; n < N; n++)
-                {
-                    double factor = Math.Pow(d, sgn == 1 ? n : (N - 1 - n));
-                    lastStep = h * factor;
-                    steps.Add(lastStep);
-                    sum += lastStep;
-                }
-
-                if (Math.Abs(sum - L) > 1e-8)
-                {
-                    steps[steps.Count - 1] += L - sum;
-                }
-            }
-
-            return steps;
-        }
-        private int EstimateStepsCount(double length, double h, double d)
-        {
-            if (Math.Abs(d - 1.0) < 1e-8)
-                return Math.Max(1, (int)Math.Round(length / h));
-
-            return Math.Max(1, (int)Math.Ceiling(Math.Log(1 + length * (d - 1) / h, d)));
+            _mesh = new SimpleMesh(nodes, elements, _areas!, materials);
         }
 
         public IMesh GetMesh()
@@ -136,16 +117,16 @@ namespace ElectroMagSimulator.Core
 
             return _mesh;
         }
+
         private int GetAreaIdForPoint(double x, double y)
         {
-            for (int i = 0; i < _areas.Count; i++)
+            for (int i = 0; i < _areas!.Count; i++)
             {
                 var a = _areas[i];
                 if (x >= a.X0 && x <= a.X1 && y >= a.Y0 && y <= a.Y1)
-                    return a.AreaId;  // ВАЖНО: брать Id из области, а не индекс i!
+                    return a.AreaId;
             }
             throw new Exception($"Точка ({x},{y}) не попала ни в одну область");
         }
-
     }
 }

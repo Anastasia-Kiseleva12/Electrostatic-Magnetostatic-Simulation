@@ -102,6 +102,7 @@ namespace ElectroMagSimulator.ViewModels
         public event Action? CreateGridRequested;
         public IPostProcessor? PostProcessor { get; private set; }
 
+
         public MainWindowViewModel()
         {
             Materials.Clear();
@@ -262,21 +263,57 @@ namespace ElectroMagSimulator.ViewModels
         {
             CreateGridRequested?.Invoke();
         }
-        public void ApplyGridSettings(List<IGridArea> areas, IGridAxis xAxis, IGridAxis yAxis)
+        public void ApplyGridSettings(
+     List<IGridArea> areas,
+     IGridAxis xAxis,
+     IGridAxis yAxis,
+     bool isXMod,
+     bool isYMod)
         {
-            LastAreas = areas;
-            LastXAxis = xAxis;
-            LastYAxis = yAxis;
+            // Если ось НЕ меняли — берём её из текущей сетки (точные шаги),
+            // иначе используем пришедшую из диалога.
+            if (!isXMod)
+            {
+                if (_mesh != null)
+                    xAxis = AxisBuilder.FromCoords(_mesh.Nodes.Select(n => n.X));
+                else if (LastXAxis != null)
+                    xAxis = LastXAxis;
+            }
 
+            if (!isYMod)
+            {
+                if (_mesh != null)
+                    yAxis = AxisBuilder.FromCoords(_mesh.Nodes.Select(n => n.Y));
+                else if (LastYAxis != null)
+                    yAxis = LastYAxis;
+            }
+
+            // Сохраним текущие назначения материалов областям
+            var prevMap = (_mesh as SimpleMesh)?.GetAreaMaterialMap();
+
+            // Перегенерируем сетку
             var generator = new GridGenerator();
             generator.Generate(areas, xAxis, yAxis);
             _mesh = generator.GetMesh();
 
+            // Обновляем "последние" оси только если их реально меняли
+            if (isXMod || LastXAxis == null) LastXAxis = xAxis;
+            if (isYMod || LastYAxis == null) LastYAxis = yAxis;
+            LastAreas = areas;
+
+            // Восстановим материалы и маппинг областей
             SyncMaterialsToMesh();
+            if (prevMap != null && _mesh is SimpleMesh sm)
+            {
+                var valid = new HashSet<int>(sm.Areas.Select(a => a.AreaId));
+                sm.SetAreaMaterialMap(prevMap.Where(kv => valid.Contains(kv.Key))
+                                             .ToDictionary(kv => kv.Key, kv => kv.Value));
+            }
 
             GridGenerated?.Invoke(_mesh);
             GridButtonText = "✏️ Редактировать сетку";
         }
+
         private void Solve()
         {
             if (_mesh == null)

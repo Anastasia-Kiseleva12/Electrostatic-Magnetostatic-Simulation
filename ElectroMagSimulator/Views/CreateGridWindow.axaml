@@ -97,7 +97,10 @@
 				<TextBlock Text="Знаки коэффициентов shX:" VerticalAlignment="Center" />
 				<TextBox Text="{Binding YSettings.SHString}" Width="400" />
 			</StackPanel>
-
+			<StackPanel Orientation="Horizontal" Margin="0,10,0,0" Spacing="10">
+				<CheckBox Content="Изменить X" IsChecked="{Binding IsXAxisModified}" />
+				<CheckBox Content="Изменить Y" IsChecked="{Binding IsYAxisModified}" />
+			</StackPanel>
 			<StackPanel Orientation="Horizontal" Margin="0,10,0,0" Spacing="10">
 				<CheckBox Content="Удвоение по X" IsChecked="{Binding DoubleToX}" />
 				<CheckBox Content="Удвоение по Y" IsChecked="{Binding DoubleToY}" />

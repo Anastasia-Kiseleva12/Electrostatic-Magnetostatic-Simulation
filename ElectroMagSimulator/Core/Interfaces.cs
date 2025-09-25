@@ -84,6 +84,8 @@ namespace ElectroMagSimulator.Core
         public int Id { get; set; }
         public double X { get; set; }
         public double Y { get; set; }
+        public bool IsBoundary { get; set; } = false;
+        public double? BoundaryValue { get; set; } = null; 
     }
 
     public class Element
